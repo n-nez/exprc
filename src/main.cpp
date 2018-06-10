@@ -1,8 +1,36 @@
+#include <algorithm>
 #include <iostream>
 #include <list>
+#include <map>
+#include <unordered_map>
 
 #include <exprc/dfg.h>
 #include <exprc/ir.h>
+
+namespace exprc {
+
+// generates maximally parallel schedule scheduling things as early as possible
+auto schedule(const std::list<Instruction>& sequence, const Dfg& dfg) {
+    std::multimap<uint32_t, std::reference_wrapper<const Instruction>> schedule;
+    std::unordered_map<Instruction::Id, uint32_t> earliest_step;
+    auto earliest = [&](const Instruction& instr) {
+        uint32_t step = 0;
+        for (auto& op : instr.src)
+            step = std::max(step, earliest_step.at(dfg.definedBy(op)) + 1);
+        earliest_step.emplace(instr, step);
+        return step;
+    };
+    for (auto& instr : sequence)
+        if (instr.opcode != Opcode::OUTPUT)
+            schedule.emplace(earliest(instr), instr);
+    auto last_step = schedule.rbegin()->first + 1;
+    for (auto& instr : sequence)
+        if (instr.opcode == Opcode::OUTPUT)
+            schedule.emplace(last_step, instr);
+    return schedule;
+}
+
+} // exprc
 
 int main() {
     exprc::Context context;
@@ -49,6 +77,11 @@ int main() {
             std::cout << "  " << p.second.get() << std::endl;
         }
     }
+    std::cout << std::endl;
+
+    auto sched = schedule(sequence, dfg);
+    for (auto& [step, instr] : sched)
+        std::cout << step << ": " << instr << std::endl;
 
     return 0;
 }

@@ -10,6 +10,8 @@
 #include <utility>
 #include <vector>
 
+#include <exprc/util.h>
+
 namespace exprc {
 
 enum class Opcode {
@@ -46,38 +48,7 @@ struct Instruction {
     std::vector<Operand> src;
 };
 
-namespace details {
-
-template <typename IdType>
-constexpr auto asInt(IdType id) {
-    return static_cast<std::underlying_type_t<IdType>>(id);
-}
-
-template <typename IdType>
-class IdGen {
-public:
-    IdType operator()() {
-        return static_cast<IdType>(m_next++);
-    }
-
-private:
-    std::underlying_type_t<IdType> m_next{asInt(IdType::FIRST_VALID_ID)};
-};
-
-} // namespace details
-
-class Context {
-public:
-
-    template <typename Type, typename... Args>
-    auto make(Args&&... args) {
-        using GenType = details::IdGen<typename Type::Id>;
-        return Type{std::get<GenType>(m_next_id)(), std::forward<Args>(args)...};
-    }
-
-private:
-    std::tuple<details::IdGen<Operand::Id>, details::IdGen<Instruction::Id>> m_next_id;
-};
+using Context = util::Context<Operand, Instruction>;
 
 inline constexpr auto toStr(Opcode opcode) {
     switch (opcode) {
@@ -94,7 +65,7 @@ inline constexpr auto toStr(Opcode opcode) {
 }
 
 inline std::ostream& operator<<(std::ostream& os, const Operand& op) {
-    return os << "op<Id:" << details::asInt(op.id) << ">";
+    return os << "op<Id:" << util::asInt(op.id) << ">";
 }
 
 inline std::ostream& operator<<(std::ostream&os, const Instruction& instr) {
