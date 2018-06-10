@@ -1,5 +1,7 @@
 #include <iostream>
+#include <list>
 
+#include <exprc/dfg.h>
 #include <exprc/ir.h>
 
 int main() {
@@ -30,6 +32,23 @@ int main() {
     for (auto& instr : sequence)
         std::cout << instr << std::endl;
     std::cout << std::endl;
+
+    auto dfg = exprc::Dfg::fromSequence(sequence);
+    for (auto& instr : sequence) {
+        std::cout << instr << " depends on: " << std::endl;
+        for (auto& op : instr.src)
+            std::cout << "  " << dfg.definedBy(op) << std::endl;
+    }
+    std::cout << std::endl;
+
+    for (auto& instr : sequence) {
+        std::cout << instr << " used by: " << std::endl;
+        if (!instr.dst)
+            continue;
+        for (auto p : dfg.usedBy(*instr.dst)) {
+            std::cout << "  " << p.second.get() << std::endl;
+        }
+    }
 
     return 0;
 }
