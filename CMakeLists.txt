@@ -11,6 +11,7 @@ add_executable(exprc
     src/main.cpp
     src/dfg.cpp
     src/alloc.cpp
+    src/verilog.cpp
 )
 
 target_include_directories(exprc

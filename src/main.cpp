@@ -8,6 +8,7 @@
 #include <exprc/dev.h>
 #include <exprc/dfg.h>
 #include <exprc/ir.h>
+#include <exprc/verilog.h>
 
 namespace exprc {
 
@@ -84,8 +85,10 @@ int main() {
     auto sched = schedule(sequence, dfg);
     for (auto& [step, instr] : sched)
         std::cout << step << ": " << instr << std::endl;
+    std::cout << std::endl;
 
     auto data_path = exprc::allocate(sched);
+    exprc::verilog::dump(std::cout, data_path);
 
     return 0;
 }
