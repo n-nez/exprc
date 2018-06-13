@@ -4,6 +4,8 @@
 #include <map>
 #include <unordered_map>
 
+#include <exprc/alloc.h>
+#include <exprc/dev.h>
 #include <exprc/dfg.h>
 #include <exprc/ir.h>
 
@@ -82,6 +84,8 @@ int main() {
     auto sched = schedule(sequence, dfg);
     for (auto& [step, instr] : sched)
         std::cout << step << ": " << instr << std::endl;
+
+    auto data_path = exprc::allocate(sched);
 
     return 0;
 }
