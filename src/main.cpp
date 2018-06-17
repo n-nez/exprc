@@ -5,6 +5,8 @@
 #include <unordered_map>
 #include <sstream>
 
+#include <fmt/format.h>
+
 #include <exprc/alloc.h>
 #include <exprc/dev.h>
 #include <exprc/dfg.h>
@@ -19,6 +21,19 @@ namespace {
 void usage() {
     std::cout << "exprc [-d] prog.txt" << std::endl;
     std::cout << "    -d  dump debug information" << std::endl;
+}
+
+void checkForDeadCode(const std::list<exprc::Instruction>& sequence, const exprc::Dfg& dfg, const std::unordered_map<exprc::Operand::Id, const std::string>& name_table) {
+    auto empty = [](const auto& range) {
+        return range.first == range.second;
+    };
+    for (auto& instr : sequence) {
+        if (!instr.dst)
+            continue;
+        auto& dst = *instr.dst;
+        if (empty(dfg.usedBy(dst)))
+            throw std::invalid_argument(fmt::format("variable {} is not used neither in 'out' statement nor in another expression", name_table.at(dst)));
+    }
 }
 
 void doAll(bool debug, const char* file) {
@@ -49,6 +64,8 @@ void doAll(bool debug, const char* file) {
         }
         std::cout << std::endl;
     }
+
+    checkForDeadCode(sequence, dfg, name_table);
 
     auto sched = schedule(sequence, dfg);
     if (debug) {
