@@ -3,6 +3,7 @@
 
 #include <array>
 #include <ostream>
+#include <string>
 #include <variant>
 
 #include <exprc/ir.h>
@@ -46,6 +47,7 @@ struct Input {
 
     const DeviceId id;
 
+    const std::string name;
     OutPort out;
     std::array<InPort, 0> in;
 };
@@ -57,6 +59,7 @@ struct Output {
 
     const DeviceId id;
 
+    const std::string name;
     std::array<InPort, 1> in;
 };
 
@@ -100,6 +103,9 @@ public:
     template <typename T>
     T make();
 
+    template <typename T>
+    T make(const std::string&);
+
 private:
     util::IdGen<InPort::Id> m_next_in_id;
     util::IdGen<OutPort::Id> m_next_out_id;
@@ -117,13 +123,13 @@ inline OutPort Context::make<OutPort>() {
 }
 
 template <>
-inline Input Context::make<Input>() {
-    return Input{m_next_id(), make<OutPort>()};
+inline Input Context::make<Input>(const std::string& name) {
+    return Input{m_next_id(), name, make<OutPort>()};
 }
 
 template <>
-inline Output Context::make<Output>() {
-    return Output{m_next_id(), {make<InPort>()}};
+inline Output Context::make<Output>(const std::string& name) {
+    return Output{m_next_id(), name, {make<InPort>()}};
 }
 
 template <>

@@ -195,11 +195,11 @@ private:
     }
 
     std::string name(const dev::Input& input) {
-        return fmt::format("inp{}", util::asInt(input.id));
+        return input.name;
     }
 
     std::string name(const dev::Output& input) {
-        return fmt::format("out{}", util::asInt(input.id));
+        return input.name;
     }
 
     std::string name(const dev::InPort::Id& port) {

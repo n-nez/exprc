@@ -55,8 +55,8 @@ public:
         : m_context(context) {
     }
 
-    const auto& alloc() {
-        return m_list.emplace_back(m_context.make<D>());
+    const auto& alloc(const std::string& name) {
+        return m_list.emplace_back(m_context.make<D>(name));
     }
 
     auto& list() const {
@@ -104,14 +104,15 @@ private:
 
 class DeviceAllocator {
 public:
-    DeviceAllocator(dev::Context& context, const std::multimap<uint32_t, std::reference_wrapper<const Instruction>>& schedule)
+    DeviceAllocator(dev::Context& context, const std::multimap<uint32_t, std::reference_wrapper<const Instruction>>& schedule, const std::unordered_map<Operand::Id, const std::string>& name_by_oper)
         : m_context(context)
         , m_inputs(context)
         , m_outputs(context)
         , m_adders(context)
         , m_multipliers(context)
         , m_regs(context)
-        , m_schedule(schedule) {
+        , m_schedule(schedule)
+        , m_name_by_oper(name_by_oper) {
     }
 
     DataPath doIt() {
@@ -130,6 +131,9 @@ private:
     template <typename Device>
     void mapIo(uint32_t, const Instruction&, const Device&);
 
+    const std::string& inputName(const Instruction&);
+    const std::string& outputName(const Instruction&);
+
     dev::Context& m_context;
     IoPool<dev::Input> m_inputs;
     IoPool<dev::Output> m_outputs;
@@ -140,6 +144,7 @@ private:
     std::unordered_map<Operand::Id, dev::OutPort::Id> m_fed_by_reg;
     std::unordered_map<Operand::Id, dev::OutPort::Id> m_fed_by_input;
     const std::multimap<uint32_t, std::reference_wrapper<const Instruction>>& m_schedule;
+    const std::unordered_map<Operand::Id, const std::string>& m_name_by_oper;
     std::map<std::tuple<uint32_t, dev::InPort::Id>, dev::OutPort::Id> m_driver_list;
 };
 
@@ -183,6 +188,14 @@ void DeviceAllocator::mapIo(uint32_t step, const Instruction& instr, const Devic
     mapOut(step, instr, device);
 }
 
+const std::string& DeviceAllocator::inputName(const Instruction& input) {
+    return m_name_by_oper.at(input.dst.value());
+}
+
+const std::string& DeviceAllocator::outputName(const Instruction& output) {
+    return m_name_by_oper.at(output.src.at(0));
+}
+
 void DeviceAllocator::allocateDevices() {
     auto last_step = m_schedule.rbegin()->first;
     for (uint32_t step = 0; step <= last_step; ++step) {
@@ -198,10 +211,10 @@ void DeviceAllocator::allocateDevices() {
                 mapIo(step, instr, m_multipliers.alloc());
                 break;
             case Opcode::INPUT:
-                mapIo(step, instr, m_inputs.alloc());
+                mapIo(step, instr, m_inputs.alloc(inputName(instr)));
                 break;
             case Opcode::OUTPUT:
-                mapIo(step, instr, m_outputs.alloc());
+                mapIo(step, instr, m_outputs.alloc(outputName(instr)));
             }
         }
     }
@@ -224,9 +237,9 @@ void DeviceAllocator::allocateRegisters() {
 
 } // namespace
 
-DataPath allocate(const std::multimap<uint32_t, std::reference_wrapper<const Instruction>>& schedule) {
+DataPath allocate(const std::multimap<uint32_t, std::reference_wrapper<const Instruction>>& schedule, const std::unordered_map<Operand::Id, const std::string>& name_by_oper) {
     exprc::dev::Context context;
-    exprc::DeviceAllocator allocator(context, schedule);
+    exprc::DeviceAllocator allocator(context, schedule, name_by_oper);
     return allocator.doIt();
 }
 

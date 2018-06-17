@@ -40,7 +40,7 @@ auto schedule(const std::list<Instruction>& sequence, const Dfg& dfg) {
 
 int main() {
     std::stringstream ss1("C = A + B; F = A + D; out G = C * F;");
-    auto sequence = std::get<0>(exprc::translate(exprc::ast::parse(ss1)));
+    auto [sequence, name_table] = exprc::translate(exprc::ast::parse(ss1));
 
     for (auto& instr : sequence)
         std::cout << instr << std::endl;
@@ -69,7 +69,7 @@ int main() {
         std::cout << step << ": " << instr << std::endl;
     std::cout << std::endl;
 
-    auto data_path = exprc::allocate(sched);
+    auto data_path = exprc::allocate(sched, name_table);
     exprc::verilog::dump(std::cout, data_path);
 
     return 0;

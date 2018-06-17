@@ -20,7 +20,7 @@ struct DataPath {
     std::map<std::tuple<uint32_t, dev::InPort::Id>, dev::OutPort::Id> drivers;
 };
 
-DataPath allocate(const std::multimap<uint32_t, std::reference_wrapper<const Instruction>>&);
+DataPath allocate(const std::multimap<uint32_t, std::reference_wrapper<const Instruction>>&, const std::unordered_map<Operand::Id, const std::string>&);
 
 } // namespace exprc
 
