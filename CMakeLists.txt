@@ -13,6 +13,7 @@ add_executable(exprc
     src/alloc.cpp
     src/verilog.cpp
     src/parse.cpp
+    src/schedule.cpp
     src/translate.cpp
 )
 
