@@ -1,0 +1,3 @@
+C = A + B;
+F = A + D;
+out G = C * F;
